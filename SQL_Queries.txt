@@ -1,0 +1,155 @@
+-- 1) Query to authenticate the user and fetch the customer name for welcome message
+--     in case authenticated sivashintsov0@rakuten.co.jp and ’hE4}.q+4YTJ’ are the login_id and password entered by the user.
+--     If authenticated, it returns the first and last name of the customer for the welcome message. 
+--     If not, it returns an empty row.
+
+SELECT C.first_name, C.last_name
+FROM customer C, authenticationn A
+WHERE A.login_id = 'sivashintsov0@rakuten.co.jp' AND A.password1 = 'hE4}.q+4YTJ|''v' AND
+C.customer_id=A.customer_id2;
+
+
+
+-- 2) Retrieve the top 5 customers who spent the most money on their orders so that we can give discount on next cart/order to that customer
+
+SELECT c.customer_id, c.first_name, c.last_name, SUM(o.total_amount) AS total_spent
+FROM customer c
+JOIN orders o ON c.customer_id = o.customer_id1
+GROUP BY c.customer_id, c.first_name, c.last_name
+ORDER BY total_spent DESC
+LIMIT 5;
+
+
+
+-- 3) Query to search a product by name and return all products having that word anywhere in its name (checking for substring)
+
+SELECT P.product_name, P.p_description, P.price
+FROM products P
+WHERE P.product_name LIKE "%Wine%";
+
+
+
+-- 4) Listing all products in a specific category
+
+SELECT p.product_name, p.price, p.stock
+FROM products p
+JOIN category c ON p.category_id1 = c.category_id
+WHERE c.category_name = 'Cheese - Grie Des Champ';
+
+
+
+-- 5) Buying from cart
+
+-- AFTER ADDING ITEMS TO CART THEN ADD TO ORDERS
+INSERT INTO orders (order_status, order_date, shipping_date, house_no1, street1, city1, country1, delivery_charges, total_amount, payment_status, customer_id1, coupon_id1)
+VALUES (
+    'FALSE',
+    CURDATE(),
+    DATE_ADD(CURDATE(), INTERVAL 3 DAY),
+    (SELECT house_no FROM customer WHERE customer_id = 1), 
+    (SELECT street FROM customer WHERE customer_id = 1), 
+    (SELECT city FROM customer WHERE customer_id = 1), 
+    (SELECT country FROM customer WHERE customer_id = 1), 
+    0, 
+    (SELECT total_amount1 FROM cart WHERE customer_id3 = 1), 
+    'Paid',
+    1, 
+    1 
+);
+
+
+-- PAYMENT
+INSERT INTO payment (amount, date1, payment_method, order_id2)
+VALUES (
+    (SELECT total_amount1 FROM cart WHERE customer_id3 = 1), 
+    CURDATE(),
+    'Net Banking',
+    (SELECT order_id FROM orders ORDER BY order_id DESC LIMIT 1) -- Assuming the last order_id
+);
+
+
+-- AFTER PAYMENT UPDATE THE PAYMENT STATUS AND ORDER STATUS
+UPDATE orders AS o
+JOIN (SELECT MAX(order_id) AS max_order_id FROM orders) AS subquery 
+ON o.order_id = subquery.max_order_id
+SET o.payment_status = 'TRUE', 
+    o.order_status = 'ordered';
+-- similarly like above update assign a delivery agent to that order.
+
+
+-- ADD INTO ORDER_ITEM LIST
+INSERT INTO order_item (order_id1, product_id1, quantity)
+SELECT (SELECT MAX(order_id) FROM orders), product_id1, quantity
+FROM cart_items
+WHERE cart_id1 = (SELECT cart_id from cart where customer_id3 = 1);
+
+-- UPDATE THE QUANTITY OF PRODUCTS
+UPDATE products p JOIN cart_items ci on p.product_id = ci.product_id1
+SET p.stock = p.stock - ci.quantity
+where ci.cart_id1 = (SELECT cart_id from cart where customer_id3 = 1);
+
+
+
+-- 6) Getting total sales per category so that we can increase the rate of greater sale category and increase profit of online store.
+
+SELECT c.category_name, SUM(o.total_amount) AS total_sales
+FROM orders o
+JOIN order_item oi ON o.order_id = oi.order_id1
+JOIN products p ON oi.product_id1 = p.product_id
+JOIN category c ON p.category_id1 = c.category_id
+GROUP BY c.category_name;
+
+
+
+-- 7) Calculate total cart cost and update it in cart total cost.
+
+UPDATE cart AS c
+JOIN (
+    SELECT ci.cart_id1, SUM(ci.quantity * p.price) AS total_cost
+    FROM cart_items ci
+    JOIN products p ON ci.product_id1 = p.product_id
+    GROUP BY ci.cart_id1
+) AS cart_totals ON c.cart_id = cart_totals.cart_id1
+SET c.total_amount1 = cart_totals.total_cost;
+
+
+
+-- 8) Query to delete cart_item from a customer’s cart, to simulate the delete button against a product one has added in one’s cart
+
+DELETE FROM cart_item C
+WHERE C.cart_id=3 AND C.product_id=3;
+
+
+
+-- 9) Increase or decrease the quantity of a particular product by 1 in a customer’s cart. (to simulate the increment done when a customer clicks on the plus button against the cart item in their cart)
+
+UPDATE cart_items CI
+INNER JOIN cart C ON CI.cart_id1 = C.cart_id
+SET CI.quantity = CI.quantity + 1
+WHERE CI.product_id1 = 3
+AND C.customer_id3 = 3;
+
+UPDATE cart_items CI
+INNER JOIN cart C ON CI.cart_id1 = C.cart_id
+SET CI.quantity = CI.quantity - 1
+WHERE CI.product_id1 = 3
+AND C.customer_id3 = 3;
+
+
+
+-- 10) Free subscription for those customers who have order count more than 50(for simplicity let set it to 3)
+
+UPDATE customer
+SET subscription_status = 'YES'
+WHERE customer_id IN (
+    SELECT customer_id1
+    FROM orders
+    GROUP BY customer_id1
+    HAVING COUNT(*) >= 3
+);
+
+
+-- CONTRIBUTION
+-- Pandillapelly Harshvardhini(2022345) - SQL_queries, relational schema
+-- Satkeerat Singh Khokhar(2022459) - relational schema
+-- Swayam Ghanghas(2022526) - 

@@ -1,0 +1,41 @@
+Pandillapelly Harshvardhini - 2022345
+
+-- TRIGGER1 - if we add item into cart it will update total amount automatically.
+
+DELIMITER $$
+CREATE TRIGGER add_cart_item_and_update_total_amount
+AFTER INSERT ON cart_items 
+FOR EACH ROW 
+BEGIN
+    UPDATE cart
+    SET cart.total_amount1 = cart.total_amount1 + ((SELECT P.price FROM products P WHERE P.product_id = NEW.product_id1) * NEW.quantity)
+    WHERE cart.cart_id = NEW.cart_id1;
+END $$
+DELIMITER ;
+
+
+-- TRIGGER2 - if any it will update product quantity after ordering a product
+
+DELIMITER $$
+create TRIGGER update_product_quantity
+AFTER INSERT ON order_item
+FOR EACH ROW
+BEGIN
+    UPDATE products
+	SET stock = stock - NEW.quantity
+    WHERE products.product_id = NEW.product_id1;
+END $$
+DELIMITER ; 
+
+
+-- TRIGGER3 - it will create new cart automatically after registration of customer
+
+DELIMITER $$
+CREATE TRIGGER create_cart_for_new_customer
+AFTER INSERT ON customer
+FOR EACH ROW
+BEGIN
+    INSERT INTO cart (total_amount1, customer_id3)
+    VALUES (0, NEW.customer_id);
+END $$
+DELIMITER ;

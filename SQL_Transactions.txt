@@ -1,0 +1,94 @@
+-- Pandillapelly Harshvardhini(2022345) 
+
+-- Transaction1
+
+START TRANSACTION;
+SELECT C.discount into @discountt 
+FROM coupon C 
+WHERE coupon_code = 'uY3*+V!5H';
+
+UPDATE cart C 
+SET C.total_amount1 = C.total_amount1*(100-@discountt)/100
+WHERE C.cart_id = 1;
+COMMIT;
+
+
+
+-- Transaction2
+
+START TRANSACTION;
+SELECT ci.product_id1, ci.quantity
+INTO @productID, @quantity
+FROM cart_items ci
+JOIN cart c ON ci.cart_id1 = c.cart_id
+WHERE c.cart_id = 5;
+
+UPDATE products AS P
+SET P.stock = P.stock - @quantity
+WHERE P.product_id = @productID;
+COMMIT;
+
+
+
+-- Transaction3
+
+START TRANSACTION;
+SELECT ca.cart_id INTO @current_cart_id
+FROM cart ca
+JOIN customer cu ON ca.customer_id3 = cu.customer_id
+WHERE cu.customer_id = 3;
+
+INSERT INTO cart_items (cart_id1, product_id1, quantity)
+VALUES (@current_cart_id, 5, 1);
+COMMIT;
+
+
+
+-- Transaction4
+
+START TRANSACTION;
+UPDATE products 
+SET stock = stock + 10
+WHERE product_id = 2;
+COMMIT;
+
+
+
+-- Transaction5
+
+START TRANSACTION;
+UPDATE products
+SET stock = CASE 
+                WHEN (SELECT stock FROM products WHERE product_id = 2) >= 5 
+                THEN stock - 5 
+                ELSE stock 
+            END
+WHERE product_id = 2;
+COMMIT;
+
+
+
+-- Transaction6
+
+START TRANSACTION;
+SELECT price INTO @product_price
+FROM products
+WHERE product_id = 4;
+
+INSERT INTO order_item (quantity, price, order_id1, product_id1)
+    VALUES (1, @product_price, 27, 4);
+COMMIT;
+
+
+
+-- Transaction7
+
+START TRANSACTION;
+
+UPDATE products
+SET price = price + 100
+WHERE product_id = 4;
+
+COMMIT;
+
+select * from products;
